@@ -27,6 +27,25 @@ bool isPixelMasked(cv::Mat mask, int j, int i) {
     return false;
 }
 
+double estimateQuality(cv::Mat image, int j, int i, int ny, int nx, int j_size, int i_size){
+    double diff = 0;
+    int j0 = j - j_size / 2;
+    int i0 = i - i_size / 2;
+    int ny0 = ny - j_size / 2;
+    int nx0 = nx - i_size / 2;
+
+
+    for(int j_it = 0; j_it <= j_size; j_it++){
+        for(int i_it = 0; i_it <= i_size; i_it++){
+            cv::Vec3b color_init = image.at<cv::Vec3b>(j0 + j_it, i0 + i_it);
+            cv::Vec3b color_this = image.at<cv::Vec3b>(ny0 + j_it, nx0 + i_it);
+            for(int k = 0; k < 3; k++)
+                diff += pow(color_this[k] - color_init[k], 2);
+        }
+    }
+    return diff;
+}
+
 void run(int caseNumber, std::string caseName) {
     std::cout << "_________Case #" << caseNumber << ": " <<  caseName << "_________" << std::endl;
 
@@ -60,10 +79,10 @@ void run(int caseNumber, std::string caseName) {
     // TODO замените белым цветом все пиксели в оригинальной картинке которые покрыты маской
     cv::Mat original_copy = original.clone();
     int cnt_masked_pix = 0;
-    for(int i = 0; i < original_copy.rows; i++){
-        for(int j = 0; j < original_copy.cols; j++){
+    for(int j = 0; j < original_copy.rows; j++){
+        for(int i = 0; i < original_copy.cols; i++){
             if(isPixelMasked(mask, j, i)) {
-                original_copy.at<cv::Vec3b>(j, i) = cv::Vec3b(255, 255, 255);\
+                original_copy.at<cv::Vec3b>(j, i) = cv::Vec3b(255, 255, 255);
                 cnt_masked_pix++;
             }
         }
@@ -73,7 +92,7 @@ void run(int caseNumber, std::string caseName) {
     // TODO посчитайте и выведите число отмаскированных пикселей (числом и в процентах) - в таком формате:
     // Number of masked pixels: 7899/544850 = 1%
     std::cout << "Number of masked pixels: " << cnt_masked_pix << "/" << original.cols*original.rows << " = "
-    << cnt_masked_pix * 100 / original.cols*original.rows << "%";
+    << cnt_masked_pix * 100 / (original.cols * original.rows) << "%";
 
     FastRandom random(32542341); // этот объект поможет вам генерировать случайные гипотезы
 
@@ -111,6 +130,12 @@ void run(int caseNumber, std::string caseName) {
     //     не забываем сохранить на диск текущую картинку
     //     а как численно оценить насколько уже хорошую картинку мы смогли построить? выведите в консоль это число
     // }
+
+    cv::Mat shifts(original_copy.cols, original_copy.rows, CV_32SC2, Scalar(0, 0, 0));
+
+    for(int cnt_c = 0; cnt_c < 100-; cnt_c++){
+
+    }
 }
 
 
