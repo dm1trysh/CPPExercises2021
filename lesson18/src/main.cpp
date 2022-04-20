@@ -12,7 +12,7 @@
 
 #include <libutils/rasserts.h>
 #include <libutils/fast_random.h>
-
+#include <string>
 
 // Эта функция говорит нам правда ли пиксель отмаскирован, т.е. отмечен как "удаленный", т.е. белый
 bool isPixelMasked(cv::Mat mask, int j, int i) {
@@ -21,6 +21,9 @@ bool isPixelMasked(cv::Mat mask, int j, int i) {
     rassert(mask.type() == CV_8UC3, 2348732984792380019);
 
     // TODO проверьте белый ли пиксель
+    cv::Vec3b color = mask.at<cv::Vec3b>(j, i);
+    if(color[0] + color[1] + color[2] == 255 * 3)
+        return true;
     return false;
 }
 
@@ -33,8 +36,12 @@ void run(int caseNumber, std::string caseName) {
     rassert(!mask.empty(), 378957298420019);
 
     // TODO напишите rassert сверяющий разрешение картинки и маски
+    rassert(mask.rows == original.rows, "wrong comparing pictures sizes 324141462363")
+    rassert(mask.cols == original.cols, "wrong comparing pictures sizes 41098420984092")
     // TODO выведите в консоль это разрешение картинки
-    // std::cout << "Image resolution: " << ... << std::endl;
+     std::cout << "Image resolution: " << mask.rows;
+     std::cout << " x ";
+     std::cout << mask.cols << "\n";
 
     // создаем папку в которую будем сохранять результаты - lesson18/resultsData/ИМЯ_НАБОРА/
     std::string resultsDir = "lesson18/resultsData/";
@@ -51,9 +58,22 @@ void run(int caseNumber, std::string caseName) {
     cv::imwrite(resultsDir + "1mask.png", mask);
 
     // TODO замените белым цветом все пиксели в оригинальной картинке которые покрыты маской
+    cv::Mat original_copy = original.clone();
+    int cnt_masked_pix = 0;
+    for(int i = 0; i < original_copy.rows; i++){
+        for(int j = 0; j < original_copy.cols; j++){
+            if(isPixelMasked(mask, j, i)) {
+                original_copy.at<cv::Vec3b>(j, i) = cv::Vec3b(255, 255, 255);\
+                cnt_masked_pix++;
+            }
+        }
+    }
     // TODO сохраните в папку с результатами то что получилось под названием "2_original_cleaned.png"
+    cv::imwrite(resultsDir + "2_original_cleaned.png", original_copy);
     // TODO посчитайте и выведите число отмаскированных пикселей (числом и в процентах) - в таком формате:
     // Number of masked pixels: 7899/544850 = 1%
+    std::cout << "Number of masked pixels: " << cnt_masked_pix << "/" << original.cols*original.rows << " = "
+    << cnt_masked_pix * 100 / original.cols*original.rows << "%";
 
     FastRandom random(32542341); // этот объект поможет вам генерировать случайные гипотезы
 
