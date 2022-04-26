@@ -15,7 +15,7 @@
 #include <string>
 
 // Эта функция говорит нам правда ли пиксель отмаскирован, т.е. отмечен как "удаленный", т.е. белый
-bool isPixelMasked(cv::Mat mask, int j, int i) {
+bool isPixelMasked(cv::Mat mask, int i, int j) {
     rassert(j >= 0 && j < mask.rows, 372489347280017);
     rassert(i >= 0 && i < mask.cols, 372489347280018);
     rassert(mask.type() == CV_8UC3, 2348732984792380019);
@@ -27,7 +27,7 @@ bool isPixelMasked(cv::Mat mask, int j, int i) {
     return false;
 }
 
-double estimateQuality(cv::Mat image, int j, int i, int ny, int nx, int j_size, int i_size){
+double estimateQuality(cv::Mat image, int i, int j, int nx, int ny, int i_size, int j_size){
     double diff = 0;
     int j0 = j - j_size / 2;
     int i0 = i - i_size / 2;
@@ -79,10 +79,10 @@ void run(int caseNumber, std::string caseName) {
     // TODO замените белым цветом все пиксели в оригинальной картинке которые покрыты маской
     cv::Mat original_copy = original.clone();
     int cnt_masked_pix = 0;
-    for(int j = 0; j < original_copy.rows; j++){
-        for(int i = 0; i < original_copy.cols; i++){
-            if(isPixelMasked(mask, j, i)) {
-                original_copy.at<cv::Vec3b>(j, i) = cv::Vec3b(255, 255, 255);
+    for(int i = 0; i < original_copy.rows; i++){
+        for(int j = 0; j < original_copy.cols; j++){
+            if(isPixelMasked(mask, i, j)) {
+                original_copy.at<cv::Vec3b>(i, j) = cv::Vec3b(255, 255, 255);
                 cnt_masked_pix++;
             }
         }
@@ -131,10 +131,29 @@ void run(int caseNumber, std::string caseName) {
     //     а как численно оценить насколько уже хорошую картинку мы смогли построить? выведите в консоль это число
     // }
 
-    cv::Mat shifts(original_copy.cols, original_copy.rows, CV_32SC2, Scalar(0, 0, 0));
+    cv::Mat shifts(original_copy.cols, original_copy.rows, CV_32SC2, cv::Scalar(0, 0));
+    cv::Mat or_copy = original.clone();
 
-    for(int cnt_c = 0; cnt_c < 100-; cnt_c++){
+    for(int cnt_c = 0; cnt_c < 1000; cnt_c++){
+        for(int i = 0; i < original_copy.rows; i++){
+            for(int j = 0; j < original_copy.cols; j++){
+                if(!isPixelMasked(mask, i, j))
+                    continue;
 
+                cv::Vec2i dxy = shifts.at<cv::Vec2i>(i ,j);
+                int nx = i + dxy[0];
+                int ny = j + dxy[1];
+                double currentQuality = estimateQuality(shifts, i, j, nx, ny, shifts.rows, shifts.cols);
+
+                int rx = random.next() % shifts.rows - i;
+                int ry = random.next() % shifts.cols - j;
+                double randomQuality = estimateQuality(shifts, i, j, i + rx, j + ry, shifts.rows, shifts.cols);
+
+                if(randomQuality > currentQuality){
+                    shifts.at< cv::Vec2i>(i, j) = cv::Vec2i(rx + i, ry + j);
+                }
+            }
+        }
     }
 }
 
