@@ -32,6 +32,11 @@ void perElementProcessing(std::vector<int> &data) {
 // многопоточная версия
 void perElementProcessingOMP(std::vector<int> &data) {
     // TODO сделайте многопоточную версию поэлементного преобразования чисел (по той же формуле что и обычная версия выше)
+
+#pragma omp parallel for
+    for (int i = 0; i < data.size(); ++i) {
+        data[i] = sqrtf(std::abs(data[i] * 2.0f + 23.45f));
+    }
 }
 
 void test1PerElementProcessing() {
@@ -42,14 +47,16 @@ void test1PerElementProcessing() {
 
     timer t; // запускаем таймер (на самом деле это секундомер, кек)
     perElementProcessing(data1);
+    float time1 = t.elapsed();
     std::cout << "  Naive version:  " << t.elapsed() << " s" << std::endl; // выводим в консоль замер времени (в секундах)
 
     t.restart(); // перезапускаем таймер
     perElementProcessingOMP(data2); // TODO сделайте многопоточную версию поэлементного умножения
+    float time2 = t.elapsed();
     std::cout << "  OpenMP version: " << t.elapsed() << " s" << std::endl;
 
     // TODO рассчитайте и выведите во сколько раз быстрее отработала OpenMP версия
-    float speedup = 0.0;
+    float speedup = time1 / time2;
     std::cout << "  OpenMP speedup: x" << speedup << std::endl;
 
     // сверяем результаты (а то вдруг работает быстро не результат неправильный?)
@@ -65,21 +72,33 @@ void test1PerElementProcessing() {
 int omp_thread_count() {
     // эта функция определяет число потоков, как это сделать проще всего?
     // попросить OpenMP запустить столько потоков сколько есть, и в каждом из потоков - увеличить счетчик на один, тем самым проверить
-    int nthreads = 0;
+    //int nthreads = 0;
 
-    #pragma omp parallel // обратите внимание что это "omp parallel" а не "omp parallel for", parallel = запустить все потоки, for = распределить по ним рабочую нагрузку
-    {                    // т.е. эта секция кода выполнится для каждого потока один раз, а значит увеличив счетчик nthreads на один в каждом из них - мы узнаем число потоков
+    //#pragma omp parallel // обратите внимание что это "omp parallel" а не "omp parallel for", parallel = запустить все потоки, for = распределить по ним рабочую нагрузку
+    //{                    // т.е. эта секция кода выполнится для каждого потока один раз, а значит увеличив счетчик nthreads на один в каждом из них - мы узнаем число потоков
         // эта секция меняет число, его нельзя менять из двух потоков одновременно,
         // поэтому секция "критическая" - т.е. выполняется одновременно только в одном потоке, а
         // остальные потоки ждут когда этот поток увеличит счетчик на один, и только затем один из них
         // тоже зайдет и увеличит счетчик на один
+        //#pragma omp critical
+        //{
+            //nthreads += 1;
+        //}
+    //}
+
+    // TODO переделайте эту функцию так чтобы она работала через редукцию (т.е. суммирование по всем потокам)
+
+    //long long nthreads = 0;
+    int nthreads = 0;
+    #pragma omp parallel
+    {
+        int thread_sl = 1;
         #pragma omp critical
         {
-            nthreads += 1;
+            nthreads += thread_sl;
         }
     }
 
-    // TODO переделайте эту функцию так чтобы она работала через редукцию (т.е. суммирование по всем потокам)
 
     return nthreads;
 }
@@ -196,9 +215,9 @@ int main() {
         std::cout << "______________________________________________" << std::endl;
 
         test1PerElementProcessing();
-        test2TotalSum();
-        test3Top2ElementSearch();
-        test4HowWorkloadIsBalanced();
+        //test2TotalSum();
+        //test3Top2ElementSearch();
+        //test4HowWorkloadIsBalanced();
 
         return 0;
     } catch (const std::exception &e) {
