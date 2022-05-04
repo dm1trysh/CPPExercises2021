@@ -85,19 +85,26 @@ int omp_thread_count() {
             //nthreads += 1;
         //}
     //}
+    int nthreads = 0;
+#pragma omp parallel
+    {
+    #pragma omp critical
+        {
+        nthreads++;
+    }
+}
+
 
     // TODO переделайте эту функцию так чтобы она работала через редукцию (т.е. суммирование по всем потокам)
 
     //long long nthreads = 0;
-    int nthreads = 0;
+    /*int nthreads_sum = 0;
     #pragma omp parallel
     {
         int thread_sl = 1;
-        #pragma omp critical
-        {
-            nthreads += thread_sl;
-        }
-    }
+#pragma omp for
+        for(int i = 0; )
+    }*/
 
 
     return nthreads;
@@ -121,7 +128,12 @@ void test2TotalSum() {
         t.restart(); // перезапускаем таймер
         sum = 0;
         // TODO сделайте эту версию параллельной (НАИВНО, без критической секции и без редукции)
+        #pragma omp parallel for
         for (int i = 0; i < data.size(); ++i) {
+            #pragma omp critical
+            {
+            sum += data[i];
+            }
         }
 
         // TODO Сначала посмотрите как она ведет себя в случае если тут есть состоянии гонки. Как отличается результат суммы? Почему так?
@@ -135,7 +147,10 @@ void test2TotalSum() {
         t.restart(); // перезапускаем таймер
         sum = 0;
         // TODO сделайте эту версию параллельной (с помощью OpenMP редукции)
-
+        #pragma omp parallel reduction(+: sum)
+        for(int i = 0; i < data.size(); i++){
+            sum += data[i];
+        }
         rassert(sum == sumExpected,
                 "sum != sumExpected, sumExpected=" + std::to_string(sumExpected) + " but sum=" + std::to_string(sum));
         std::cout << "  OpenMP version+reduction:    " << t.elapsed() << " s" << std::endl;
@@ -146,7 +161,19 @@ void test2TotalSum() {
         t.restart(); // перезапускаем таймер
         sum = 0;
         // TODO сделайте эту версию параллельной (с помощью САМОПИСНОЙ редукции)
+        #pragma omp parallel
+        {
+            int loc_sum = 0;
+            #pragma omp for
+            for (int i = 0; i < data.size(); i++) {
+                loc_sum += data[i];
+            }
 
+            #pragma omp critical
+            {
+                sum += loc_sum;
+            }
+        }
         rassert(sum == sumExpected,
                 "sum != sumExpected, sumExpected=" + std::to_string(sumExpected) + " but sum=" + std::to_string(sum));
         std::cout << "  OpenMP version+my reduction: " << t.elapsed() << " s" << std::endl;
@@ -214,8 +241,8 @@ int main() {
         std::cout << "CPU on this computer has " << nthreads << " virtual threads" << std::endl;
         std::cout << "______________________________________________" << std::endl;
 
-        test1PerElementProcessing();
-        //test2TotalSum();
+        //test1PerElementProcessing();
+        test2TotalSum();
         //test3Top2ElementSearch();
         //test4HowWorkloadIsBalanced();
 
