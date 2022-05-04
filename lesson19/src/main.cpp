@@ -147,7 +147,7 @@ void test2TotalSum() {
         t.restart(); // перезапускаем таймер
         sum = 0;
         // TODO сделайте эту версию параллельной (с помощью OpenMP редукции)
-        #pragma omp parallel reduction(+: sum)
+        #pragma omp parallel for reduction(+: sum)
         for(int i = 0; i < data.size(); i++){
             sum += data[i];
         }
@@ -163,7 +163,7 @@ void test2TotalSum() {
         // TODO сделайте эту версию параллельной (с помощью САМОПИСНОЙ редукции)
         #pragma omp parallel
         {
-            int loc_sum = 0;
+            long long loc_sum = 0;
             #pragma omp for
             for (int i = 0; i < data.size(); i++) {
                 loc_sum += data[i];
