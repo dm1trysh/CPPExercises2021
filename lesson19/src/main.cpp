@@ -217,6 +217,36 @@ void test3Top2ElementSearch() {
     t.restart();
     #pragma omp parallel
     {
+        int max1_loc = MIN_INT;
+        int max2_loc = MIN_INT;
+        #pragma omp for
+        for(int i = 0; i < n; i++){
+            int tmp = data[i];
+            if(tmp > max1_loc){
+                max2_loc = max1_loc;
+                max1_loc = tmp;
+            }
+            else{
+                if(tmp > max2_loc)
+                    max2_loc = tmp;
+            }
+        }
+
+        #pragma omp critical
+        {
+            if(max1_loc > max1){
+                if(max2 < max1)
+                    max2 = max1;
+
+                max1 = max1_loc;
+
+                max2 = std::max(max2, max2_loc);
+            }
+            else{
+                max2 = std::max(max2, max1_loc);
+            }
+
+        }
         // TODO сделайте многопоточную версию (используйте самописную редукцию)
     }
     rassert(max1 == max1Expected && max2 == max2Expected,
@@ -242,8 +272,8 @@ int main() {
         std::cout << "______________________________________________" << std::endl;
 
         //test1PerElementProcessing();
-        test2TotalSum();
-        //test3Top2ElementSearch();
+        //test2TotalSum();
+        test3Top2ElementSearch();
         //test4HowWorkloadIsBalanced();
 
         return 0;
